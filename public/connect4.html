@@ -1,0 +1,83 @@
+<html>
+    <head>
+        <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js"></script>
+
+ 
+    </head>
+
+    <body ng-app="app" ng-controller="connectController">
+
+        <form>
+            <div class="board">
+              <div class="field">
+                <h1 ng-bind="message"></h1>
+                <h1 ng-bind="(data.last_move == 1)? 'RED': 'YELLOW'"></h1>
+                <table >
+                   
+                  <tr  ng-repeat="d in board track by $index">
+                    <td ng-repeat="t in d track by $index" ng-bind="t" ng-click="setMove($index)"></td>
+                   </tr>
+                  </table>
+                </div>
+              </div>
+              <div class="front"></div>
+            </div>
+            <button type="reset" ng-click="newGame()">New Game</button>
+          </form>
+
+
+          <script>
+            var app = angular.module('app', []);
+            app.controller('connectController', function($scope, $http, $timeout) {
+                $scope.data = {};
+                $scope.board = [];
+                $scope.player_move = 0;
+                $scope.message = '';
+               $scope.loadBoard = function() {
+                   $http.get('/board').then((resp) => {
+                       $scope.data = resp.data.data;
+                       $scope.board = resp.data.data.game_chart;
+                       $scope.board = JSON.parse(angular.toJson($scope.board))
+                       
+                       console.log($scope.board);
+                       
+                   }).catch((err) => {
+                       console.log("Some error occured", err);
+                   })
+               }
+
+               $scope.newGame = function() {
+                   $http.post('/new').then((resp) => {
+                        $timeout(() => {$scope.message = '';}, 3000)
+                        $scope.loadBoard();
+                   }).catch((err) => {
+
+                   });
+               }
+
+
+               $scope.setMove = function(ind) {
+                let playerMove = 0;   
+                if ($scope.data.last_move == 0) {
+                        playerMove=2;
+                   }
+                   let data = {player: $scope.data.last_move, move: ind};
+                   $http.post('/move', data).then((resp) => {
+                       if (resp.data.end) {
+                            $scope.message = resp.data.message;
+                            $scope.newGame();
+                       } else {
+                        $scope.loadBoard();
+                       }
+                      
+                   })
+               }
+
+               $scope.loadBoard();
+            });
+            </script>
+
+    </body>
+</html>
+
+ 
